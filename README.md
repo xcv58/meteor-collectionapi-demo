@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/xcv58/meteor-collectionapi-demo.svg)](https://travis-ci.org/xcv58/meteor-collectionapi-demo)
+
 # meteor-collectionapi-demo
 Demo for meteor-collectionapi
 
