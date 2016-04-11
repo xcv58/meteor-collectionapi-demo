@@ -1,3 +1,0 @@
-[submodule "packages/xcv58:collection-api"]
-	path = packages/xcv58:collection-api
-	url = https://github.com/xcv58/meteor-collectionapi.git
