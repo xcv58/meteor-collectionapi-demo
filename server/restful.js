@@ -4,14 +4,22 @@ import { CollectionAPI } from 'meteor/xcv58:collection-api';
 
 const Players = new Mongo.Collection('players');
 
+const handleReturnObject = (returnObject, result) => {
+  Object.assign(returnObject, result);
+};
+
 const notFound = (returnObject, requestMetadata) => {
-  Object.assign(returnObject, {
-    statusCode: 500,
+  handleReturnObject(returnObject, {
+    statusCode: 404,
     body: {
-      error: `id${requestMetadata.collectionId} does not exist!`,
+      error: `id ${requestMetadata.collectionId} does not exist!`,
     },
   });
 };
+
+const internalError = (returnObject, error) => handleReturnObject(returnObject, {
+  statusCode: 500, body: { error },
+});
 
 Meteor.startup(() => {
   // All values listed below are default
@@ -57,36 +65,30 @@ Meteor.startup(() => {
       POST(obj, requestMetadata, returnObject) {
         // always set returnObject.success = true, if you want handle it by yourself!
         const success = true;
-        Object.assign(returnObject, { success });
+        handleReturnObject(returnObject, { success });
 
         // only allow obj to insert with 'id' key exists.
         const hasId = obj.hasOwnProperty('id');
         if (hasId) {
           try {
             const id = Players.insert(obj);
-            Object.assign(returnObject, {
+            handleReturnObject(returnObject, {
               statusCode: 201,
               body: { obj, method: 'POST' },
             });
-            Object.assign(obj, { _id: id });
+            handleReturnObject(obj, { _id: id });
           } catch (e) {
-            Object.assign(returnObject, {
-              statusCode: 500,
-              body: { error: e.toString() },
-            });
+            internalError(returnObject, e.toString());
           }
         } else {
-          Object.assign(returnObject, {
-            statusCode: 500,
-            body: { error: 'no id' },
-          });
+          internalError(returnObject, 'no id');
         }
         return true;
       },
       // GET: undefined,     // function(objs, requestMetadata, returnObject) {return true/false;},
       GET(objs, requestMetadata, returnObject) {
         const success = true;
-        Object.assign(returnObject, { success });
+        handleReturnObject(returnObject, { success });
 
         // only expose obj with no _del or _del === false
         // You may need manually get objs if you pass in an invalid collection
@@ -96,18 +98,22 @@ Meteor.startup(() => {
             filteredObjs.push(obj);
           }
         });
-        Object.assign(returnObject, {
-          statusCode: 200,
-          body: {
-            method: 'GET',
-            objs: filteredObjs,
-          },
-        });
+        if (filteredObjs.length > 0) {
+          handleReturnObject(returnObject, {
+            statusCode: 200,
+            body: {
+              method: 'GET',
+              objs: filteredObjs,
+            },
+          });
+        } else {
+          notFound(returnObject, requestMetadata);
+        }
         return true;
       },
       PUT(obj, newValues, requestMetadata, returnObject) {
         const success = true;
-        Object.assign(returnObject, { success });
+        handleReturnObject(returnObject, { success });
 
         // if (!obj || obj._del === true) {
         // even _del equals true, user still can set it to false to activate it.
@@ -118,7 +124,7 @@ Meteor.startup(() => {
 
         try {
           const updatedObj = Players.update(obj._id, newValues);
-          Object.assign(returnObject, {
+          handleReturnObject(returnObject, {
             statusCode: 200,
             body: {
               method: 'PUT',
@@ -126,12 +132,7 @@ Meteor.startup(() => {
             },
           });
         } catch (e) {
-          Object.assign(returnObject, {
-            statusCode: 500,
-            body: {
-              error: e.toString(),
-            },
-          });
+          internalError(returnObject, e.toString());
         }
 
         return true;
@@ -139,7 +140,7 @@ Meteor.startup(() => {
       // DELETE: undefined  // function(obj, requestMetadata, returnObject) {return true/false;}
       DELETE(obj, requestMetadata, returnObject) {
         const success = true;
-        Object.assign(returnObject, { success });
+        handleReturnObject(returnObject, { success });
 
         if (!obj || obj._del === true) {
           notFound(returnObject, requestMetadata);
@@ -150,15 +151,12 @@ Meteor.startup(() => {
           Players.update(obj._id, {
             $set: { _del: true },
           });
-          Object.assign(returnObject, {
+          handleReturnObject(returnObject, {
             statusCode: 200,
             body: { method: 'DELETE' },
           });
         } catch (e) {
-          Object.assign(returnObject, {
-            statusCode: 500,
-            body: { error: e.toString() },
-          });
+          internalError(returnObject, e.toString());
         }
 
         return true;
