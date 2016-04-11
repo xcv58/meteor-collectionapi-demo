@@ -4,6 +4,15 @@ import { CollectionAPI } from 'meteor/xcv58:collection-api';
 
 const Players = new Mongo.Collection('players');
 
+const notFound = (returnObject, requestMetadata) => {
+  Object.assign(returnObject, {
+    statusCode: 500,
+    body: {
+      error: `id${requestMetadata.collectionId} does not exist!`,
+    },
+  });
+};
+
 Meteor.startup(() => {
   // All values listed below are default
   const collectionApi = new CollectionAPI({
@@ -103,12 +112,7 @@ Meteor.startup(() => {
         // if (!obj || obj._del === true) {
         // even _del equals true, user still can set it to false to activate it.
         if (!obj) {
-          Object.assign(returnObject, {
-            statusCode: 500,
-            body: {
-              error: `id${requestMetadata.collectionId} does not exist!`,
-            },
-          });
+          notFound(returnObject, requestMetadata);
           return true;
         }
 
@@ -138,12 +142,7 @@ Meteor.startup(() => {
         Object.assign(returnObject, { success });
 
         if (!obj || obj._del === true) {
-          Object.assign(returnObject, {
-            statusCode: 500,
-            body: {
-              error: `id${requestMetadata.collectionId} does not exist!`,
-            },
-          });
+          notFound(returnObject, requestMetadata);
           return true;
         }
 
