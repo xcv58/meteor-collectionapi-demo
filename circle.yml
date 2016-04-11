@@ -6,4 +6,5 @@ machine:
 
 test:
   override:
+    - "npm test"
     - "meteor build temp"
