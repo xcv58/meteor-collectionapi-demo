@@ -1,0 +1,9 @@
+machine:
+  node:
+    version: 5.10.0
+  pre:
+    - "curl https://install.meteor.com | /bin/sh"
+
+test:
+  override:
+    - "meteor build temp"
